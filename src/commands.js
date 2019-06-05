@@ -39,11 +39,15 @@ Game.Commands.showScreenCommand = function(screen, mainScreen) {
     };
 };
 
-Game.Commands.showItemScreenCommand = function(itemScreen, mainScreen, noItemsMessage, getItems = false) {
+Game.Commands.showItemScreenCommand = function(itemScreen, mainScreen, noItemsMessage, getItems) {
     return function(entity) {
         // Items screens' setup method will always return the number of items they will display.
         // This can be used to determine a prompt if no items will display in the menu
-        var items = getItems ? getItems() : entity.getItems();
+        if(!itemScreen.setup)
+            throw new Error('item screens require a setup method.');
+
+        var items = getItems ? getItems(entity) : entity.getItems();
+        if(!items) items = [];
         var acceptableItems = itemScreen.setup(entity, items);
         if(acceptableItems > 0)
             mainScreen.setSubScreen(itemScreen);
@@ -53,6 +57,43 @@ Game.Commands.showItemScreenCommand = function(itemScreen, mainScreen, noItemsMe
         }
     };
 };
+
+Game.Commands.ItemScreenExecuteOkCommand = function(mainScreen, key) {
+    return function() {
+        var letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+        var index = letters.indexOf(key.toLowerCase());
+        var subScreen = mainScreen.getSubScreen();
+
+        // If enter is pressed, execute the ok functions
+        if(key === "Enter")
+            return subScreen.executeOkFunction();
+
+        // If the 'no item' option is selected
+        if(subScreen._canSelectItem && subScreen._hasNoItemOption && key === "0") {
+            subScreen._selectedIndices = {};
+            return subScreen.executeOkFunction();
+        }
+
+        // Do nothing if a letter isn't pressed
+        if(index === -1)
+            return false;
+
+        if(subScreen._items[index]) {
+            // If multiple selection is allowed, toggle the selection status,
+            // else select the item and exit the screen
+            if(subScreen._canSelectMultipleItems) {
+                if(subScreen._selectedIndices[index])
+                    delete subScreen._selectedIndices[index];
+                else
+                    subScreen._selectedIndices[index] = true;
+
+            } else {
+                subScreen._selectedIndices[index] = true;
+                return subScreen.executeOkFunction();
+            }
+        }
+    }
+}
 
 Game.Commands.showTargettingScreenCommand = function(targettingScreen, mainScreen) {
     return function(entity) {
@@ -67,6 +108,39 @@ Game.Commands.showTargettingScreenCommand = function(targettingScreen, mainScree
 
         targettingScreen.setup(entity, entity.getX(), entity.getY(), offsetX, offsetY);
         mainScreen.setSubScreen(targettingScreen);
+    };
+};
+
+// Does not end player turn, so don't return
+Game.Commands.moveCursorCommand = function(mainScreen, offsetX, offsetY) {
+        return function() {
+            mainScreen.getSubScreen().moveCursor(offsetX, offsetY);
+        }
+};
+
+Game.Commands.TargetBasedScreenOkCommand = function(mainScreen) {
+    return function() {
+        return mainScreen.getSubScreen().executeOkFunction();
+    }
+}
+
+Game.Commands.moveMenuIndexCommand = function(mainScreen, amount) {
+    return function() {
+        var subScreen = mainScreen.getSubScreen();
+        subScreen.moveMenuIndex(amount);
+    }
+}
+
+Game.Commands.MenuScreenOkCommand = function(mainScreen) {
+    return function() {
+        var subScreen = mainScreen.getSubScreen();
+        return subScreen.executeOkFunction();
+    }
+}
+
+Game.Commands.removeSubScreenCommand = function(mainScreen) {
+    return function() {
+        mainScreen.setSubScreen(undefined);
     };
 };
 

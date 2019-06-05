@@ -28,7 +28,7 @@ program
 		// Copy over the main files
 		let contents = fs.readdirSync(srcDir);
 		let jsDir = fs.readdirSync('js');
-		let jsFiles;
+		let jsFiles = [];
 		for (var i = 0; i < contents.length; i++) {
 			if(jsDir.indexOf(contents[i]) > -1) {
 				console.log(chalk.blue(contents[i] + ' already exists. Skipping...'));
@@ -129,15 +129,16 @@ function generateIndexHTML(jsFiles) {
 		html += '<head>\n';
 		html += '\t<meta charset="UTF-8">\n';
 		html += '\t<title>[Your Game] - A Roguelike</title>\n';
-		for (var i = 0; i < jsFiles.length; i++) {
-			if(jsOrder.indexOf(jsFiles[i]) < 0)
-				throw new Error("This file must be ordered: " + jsFiles[i]);
+	for (var i = 0; i < jsFiles.length; i++) {
+		if(jsOrder.indexOf(jsFiles[i]) < 0)
+			throw new Error("This file must be ordered: " + jsFiles[i]);
 
-			html += '\t<script src="js/' + jsOrder[i] + '" type="text/javascript"></script>\n';
-		}
-		html += '</head>\n';
-		html += '<body></body>\n';
-		html += '</html>';
+		html += '\t<script src="js/' + jsOrder[i] + '" type="text/javascript"></script>\n';
+	}
+
+	html += '</head>\n';
+	html += '<body></body>\n';
+	html += '</html>';
 
 	return html;
 }

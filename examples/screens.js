@@ -47,7 +47,7 @@ Game.Screen.loadScreen = new Game.Screen.basicScreen({
         var bar = "[".rpad("=", barWidth);
         var end = "]".lpad(" ", barDiff);
         var progressBar = bar + end; // The length of this string should always be 78 (or w - 2)
-            
+
         // Render prompt to the screen
         display.drawText((w/2) - 5, 5, "%c{yellow}Loading...");
         display.drawText((w/2) - (progressBar.length / 2), 7, progressBar);
@@ -195,13 +195,10 @@ Game.Screen.playScreen = new Game.Screen.basicScreen({
             return;
         }
 
-        var command = Game.Input.handleInput('playScreen', inputType, inputData),
-            unlock;
+        var command = Game.Input.handleInput('playScreen', inputType, inputData);
+        var unlock = command ? command(this._player) : false;
 
-        if(command)
-            unlock = command(this._player);
-
-        if(unlock || !command)
+        if(unlock)
             this._player.getMap().getEngine().unlock();
         else
             Game.refresh();
@@ -233,8 +230,8 @@ Game.Screen.playScreen = new Game.Screen.basicScreen({
         var currentDepth = this._player.getZ();
         // Find all visible cells and update the object
         map.getFov(currentDepth).compute(
-            this._player.getX(), this._player.getY(), 
-            this._player.getSightRadius(), 
+            this._player.getX(), this._player.getY(),
+            this._player.getSightRadius(),
             function(x, y, radius, visibility) {
                 visibleCells[x + "," + y] = true;
                 // Mark cell as explored
@@ -270,7 +267,7 @@ Game.Screen.playScreen = new Game.Screen.basicScreen({
                         // dark gray.
                         foreground = 'darkGray';
                     }
-                    
+
                     display.draw(
                         x - topLeftX,
                         y - topLeftY,
@@ -305,6 +302,9 @@ Game.Screen.playScreen = new Game.Screen.basicScreen({
     },
     setGameEnded: function(gameEnded) {
         this._gameEnded = gameEnded;
+    },
+    getSubScreen: function() {
+        return this._subScreen;
     },
     setSubScreen: function(subScreen) {
         this._subScreen = subScreen;
@@ -429,7 +429,7 @@ Game.Screen.examineScreen = new Game.Screen.ItemListScreen({
             var details = item.details();
             if(details && details != "") {
                 description += " (%s).";
-                Game.sendMessage(this._player, description, 
+                Game.sendMessage(this._player, description,
                 [
                     item.describeA(false),
                     item.details()
@@ -437,7 +437,7 @@ Game.Screen.examineScreen = new Game.Screen.ItemListScreen({
             } else {
                 Game.sendMessage(this._player, description, [item.describeA(false)]);
             }
-            
+
         }
         return true;
     }
@@ -499,10 +499,11 @@ Game.Screen.lookScreen = new Game.Screen.TargetBasedScreen({
                 map.getTile(x, y, z).getDescription());
 
         } else {
+            var nullTile = Game.TileRepository.create('null');
             // If the tile is not explored, show the null tile description.
             return String.format('%s - %s',
-                Game.Tile.nullTile.getRepresentation(),
-                Game.Tile.nullTile.getDescription());
+                nullTile.getRepresentation(),
+                nullTile.getDescription());
         }
     }
 });
@@ -654,7 +655,7 @@ Game.Screen.gainStatScreen = new Game.Screen.basicScreen({
 
 // Define our winning screen
 Game.Screen.winScreen = new Game.Screen.basicScreen({
-    enter: function() {    console.log("Entered win screen."); },
+    enter: function() { console.log("Entered win screen."); },
     exit: function() { console.log("Exited win screen."); },
     render: function(display) {
         // Render our prompt to the screen
@@ -670,7 +671,7 @@ Game.Screen.winScreen = new Game.Screen.basicScreen({
     handleInput: function(inputType, inputData) {
         if(inputType === 'keydown' && inputData.keyCode === ROT.VK_RETURN) {
             Game.switchScreen(Game.Screen.playScreen);
-        }   
+        }
     }
 });
 
@@ -688,6 +689,6 @@ Game.Screen.loseScreen = new Game.Screen.basicScreen({
         if(inputType === 'keydown' && inputData.keyCode === ROT.VK_RETURN) {
             Game.Screen.playScreen.setGameEnded(true);
             Game.switchScreen(Game.Screen.startScreen);
-        }     
+        }
     }
 });
